@@ -92,6 +92,10 @@ function showNav() {
         duration: 0.8,
         ease: 'power3.out',
     });
+    gsap.fromTo('.hero-card',
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 1, delay: 0.5, ease: 'power3.out' }
+    );
 }
 
 
@@ -238,8 +242,16 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 
+// ===== Tab title misses you when you switch away =====
+const pageTitle = document.title;
+document.addEventListener('visibilitychange', () => {
+    document.title = document.hidden ? 'Come back, we miss you already' : pageTitle;
+});
+
+
 // ===== Countdown Timer =====
-const WEDDING_DATE = new Date('2027-05-01T16:00:00');
+// Queensland time (no daylight saving), so the countdown is right for guests anywhere
+const WEDDING_DATE = new Date('2027-08-07T16:00:00+10:00');
 
 function updateCountdown() {
     const now = new Date();
@@ -268,7 +280,7 @@ function updateCountdown() {
 
     document.getElementById('days').textContent = days;
     document.getElementById('hours').textContent = String(hours).padStart(2, '0');
-    document.getElementById('minutes').textContent = newSec;
+    document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
     document.getElementById('seconds').textContent = newSec;
 }
 
@@ -277,7 +289,7 @@ setInterval(updateCountdown, 1000);
 
 
 // ===== Smooth Scroll for Nav Links (Lenis) =====
-document.querySelectorAll('.nav-right a[href^="#"]').forEach(link => {
+document.querySelectorAll('.nav-right a[href^="#"], .hero-rsvp').forEach(link => {
     link.addEventListener('click', (e) => {
         e.preventDefault();
         const target = document.querySelector(link.getAttribute('href'));
@@ -288,17 +300,208 @@ document.querySelectorAll('.nav-right a[href^="#"]').forEach(link => {
 });
 
 
+// ===== Add to Apple / Outlook calendar (.ics download) =====
+document.getElementById('ics-link')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const ics = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Annie and Connor//Wedding//EN',
+        'BEGIN:VEVENT',
+        'UID:annie-connor-wedding-20270807',
+        'DTSTAMP:20261024T000000Z',
+        'DTSTART:20270807T060000Z',
+        'DTEND:20270807T140000Z',
+        "SUMMARY:Annie & Connor's Wedding",
+        'LOCATION:Elm House\\, 1956 Mount Glorious Rd\\, Mount Glorious QLD 4520',
+        'END:VEVENT',
+        'END:VCALENDAR',
+    ].join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+    a.download = 'annie-and-connor-wedding.ics';
+    a.click();
+    URL.revokeObjectURL(a.href);
+});
+
+
+// ===== RSVP: yes / no choice =====
+// On a computer, "no" runs away from the mouse. On phones (no hover), every
+// "no" tap makes "yes" a bit bigger, and the third tap goes through.
+const choiceYes = document.getElementById('choice-yes');
+const choiceNo = document.getElementById('choice-no');
+const choiceQuip = document.getElementById('choice-quip');
+const choiceEscape = document.getElementById('choice-escape');
+const rsvpExtras = document.getElementById('rsvp-extras');
+let attending = null;
+
+const dodgeQuips = [
+    'Nice try.',
+    'Nope.',
+    "That button has cold feet.",
+    "It's quick in the mountain air.",
+    "We can do this all day. We're on leave.",
+    'Have you tried saying yes?',
+    'The yes button is right there. Looking lovely.',
+    'Annie says no.',
+    'Connor also says no.',
+    'This is a legally binding chase.',
+    'Okay, you are persistent. We respect it.',
+];
+const tapQuips = ['Are you sure?', 'Like... really sure? Look how big yes is getting.'];
+let dodges = 0;
+let noTaps = 0;
+
+function setAttending(value) {
+    attending = value;
+    choiceYes.classList.toggle('selected', value === 'yes');
+    choiceNo.classList.toggle('selected', value === 'no');
+    rsvpExtras.hidden = value !== 'yes';
+    if (value === 'yes') choiceQuip.textContent = 'Best answer.';
+    if (value === 'no') choiceQuip.textContent = "We'll miss you, and we'll raise a glass for you.";
+    if (value === 'no') {
+        gsap.to(choiceNo, { x: 0, y: 0, rotation: 0, duration: 0.6, ease: 'power3.out' });
+        choiceEscape.hidden = true;
+    }
+}
+
+choiceYes.addEventListener('click', () => {
+    setAttending('yes');
+    gsap.to(choiceYes, { scale: 1, duration: 0.4 });
+});
+
+const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+if (canHover) {
+    const arena = document.getElementById('rsvp');
+    const FLEE_RADIUS = 120;
+    let pos = { x: 0, y: 0 };
+
+    function dodge(mouseX, mouseY) {
+        if (attending === 'no') return;
+        const r = choiceNo.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        let dx = cx - mouseX;
+        let dy = cy - mouseY;
+        const dist = Math.hypot(dx, dy) || 1;
+
+        // Where the button sits with no offset, and how far it may go while
+        // staying inside the RSVP section and on screen
+        const baseLeft = r.left - pos.x;
+        const baseTop = r.top - pos.y;
+        const a = arena.getBoundingClientRect();
+        const pad = 24;
+        const minX = Math.max(a.left, 0) + pad - baseLeft;
+        const maxX = Math.min(a.right, window.innerWidth) - pad - r.width - baseLeft;
+        const minY = Math.max(a.top, 0) + pad - baseTop;
+        const maxY = Math.min(a.bottom, window.innerHeight) - pad - r.height - baseTop;
+        const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+
+        const push = FLEE_RADIUS + 40;
+        let nx = clamp(pos.x + (dx / dist) * push, minX, maxX);
+        let ny = clamp(pos.y + (dy / dist) * push, minY, maxY);
+
+        // Cornered: jump somewhere far from the mouse instead
+        const newCx = baseLeft + nx + r.width / 2;
+        const newCy = baseTop + ny + r.height / 2;
+        if (Math.hypot(newCx - mouseX, newCy - mouseY) < FLEE_RADIUS) {
+            for (let i = 0; i < 12; i++) {
+                const tx = minX + Math.random() * (maxX - minX);
+                const ty = minY + Math.random() * (maxY - minY);
+                const tcx = baseLeft + tx + r.width / 2;
+                const tcy = baseTop + ty + r.height / 2;
+                if (Math.hypot(tcx - mouseX, tcy - mouseY) > FLEE_RADIUS * 2) {
+                    nx = tx;
+                    ny = ty;
+                    break;
+                }
+            }
+        }
+
+        pos = { x: nx, y: ny };
+        gsap.to(choiceNo, {
+            x: nx,
+            y: ny,
+            rotation: (Math.random() - 0.5) * 16,
+            duration: 0.35,
+            ease: 'power3.out',
+        });
+
+        choiceQuip.textContent = dodgeQuips[Math.min(dodges, dodgeQuips.length - 1)];
+        dodges++;
+        if (dodges === 8) choiceEscape.hidden = false;
+    }
+
+    let lastDodge = 0;
+    window.addEventListener('mousemove', (e) => {
+        const r = choiceNo.getBoundingClientRect();
+        const dist = Math.hypot(
+            r.left + r.width / 2 - e.clientX,
+            r.top + r.height / 2 - e.clientY
+        );
+        const now = performance.now();
+        if (dist < FLEE_RADIUS && now - lastDodge > 120) {
+            lastDodge = now;
+            dodge(e.clientX, e.clientY);
+        }
+    });
+
+    // If the mouse somehow lands on it, it still won't take the click.
+    // Keyboard users (Tab + Enter, where e.detail is 0) can still pick it.
+    choiceNo.addEventListener('click', (e) => {
+        if (e.detail > 0) {
+            dodge(e.clientX, e.clientY);
+            return;
+        }
+        setAttending('no');
+    });
+
+    // Put it back where it started if they scroll away
+    window.addEventListener('scroll', () => {
+        if (pos.x === 0 && pos.y === 0) return;
+        const a = arena.getBoundingClientRect();
+        if (a.bottom < 0 || a.top > window.innerHeight) {
+            pos = { x: 0, y: 0 };
+            gsap.set(choiceNo, { x: 0, y: 0, rotation: 0 });
+        }
+    }, { passive: true });
+} else {
+    choiceNo.addEventListener('click', () => {
+        if (noTaps < tapQuips.length) {
+            choiceQuip.textContent = tapQuips[noTaps];
+            noTaps++;
+            gsap.to(choiceYes, { scale: 1 + noTaps * 0.18, duration: 0.5, ease: 'elastic.out(1, 0.5)' });
+            return;
+        }
+        gsap.to(choiceYes, { scale: 1, duration: 0.4 });
+        setAttending('no');
+    });
+}
+
+choiceEscape.addEventListener('click', () => setAttending('no'));
+
+
 // ===== RSVP Form with Confetti =====
 document.getElementById('rsvp-form')?.addEventListener('submit', (e) => {
     e.preventDefault();
-    const btn = e.target.querySelector('button');
-    btn.textContent = 'Thank you!';
+    if (!attending) {
+        choiceQuip.textContent = 'Pick one first. (We know which one we hope for.)';
+        gsap.fromTo('.choice-row', { x: -8 }, { x: 0, duration: 0.5, ease: 'elastic.out(1, 0.3)' });
+        return;
+    }
+
+    // TODO: nothing is sent anywhere yet. Hook this up to Formspree / Google
+    // Sheets / etc. with new FormData(e.target) plus `attending`.
+
+    const btn = e.target.querySelector('.btn-rsvp');
+    btn.textContent = attending === 'yes' ? 'See you on the mountain!' : 'Thank you for letting us know';
     btn.disabled = true;
     btn.style.background = '#6b8f71';
     btn.style.pointerEvents = 'none';
 
     // Confetti burst
-    if (typeof confetti === 'function') {
+    if (attending === 'yes' && typeof confetti === 'function') {
         const rect = btn.getBoundingClientRect();
         const x = (rect.left + rect.width / 2) / window.innerWidth;
         const y = (rect.top + rect.height / 2) / window.innerHeight;
