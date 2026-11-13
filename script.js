@@ -239,7 +239,7 @@ window.addEventListener('scroll', () => {
 
 
 // ===== Countdown Timer =====
-const WEDDING_DATE = new Date('2027-05-01T16:00:00');
+const WEDDING_DATE = new Date('2027-08-07T16:00:00');
 
 function updateCountdown() {
     const now = new Date();
