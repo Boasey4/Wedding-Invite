@@ -63,6 +63,13 @@
                 <img src="photos/photo6.jpg" alt="Photo 6" loading="eager">
             </div>
         </div>
+        <div class="hero-card">
+            <p class="hero-kicker">together with their families</p>
+            <h1 class="hero-names">Annie <span>&amp;</span> Connor</h1>
+            <p class="hero-date">Saturday 7 August 2027</p>
+            <p class="hero-place">Elm House &middot; Mount Glorious</p>
+            <a href="#rsvp" class="hero-rsvp">RSVP</a>
+        </div>
     </section>
 
     <!-- Love Story Section -->
@@ -117,9 +124,13 @@
 
     <!-- Date & Countdown Section -->
     <section class="date-section" id="date">
+        <!-- Mount Glorious mist -->
+        <div class="mist mist-1"></div>
+        <div class="mist mist-2"></div>
         <div class="date-content reveal">
-            <p class="date-intro">your intro text here...</p>
-            <h2 class="date-headline">may 1, 2027</h2>
+            <p class="date-intro">save the date &mdash; we're getting married</p>
+            <h2 class="date-headline">august 7, 2027</h2>
+            <p class="date-place">Saturday &middot; Elm House, Mount Glorious</p>
             <div class="countdown" id="countdown">
                 <div class="countdown-item">
                     <span class="countdown-num" id="days">---</span>
@@ -141,6 +152,10 @@
                     <span class="countdown-label">seconds</span>
                 </div>
             </div>
+            <div class="calendar-links">
+                <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Annie+%26+Connor%27s+Wedding&amp;dates=20270807T060000Z/20270807T140000Z&amp;location=Elm+House,+1956+Mount+Glorious+Rd,+Mount+Glorious+QLD+4520" target="_blank" rel="noopener">Add to Google Calendar</a>
+                <a href="#" id="ics-link">Add to Apple / Outlook</a>
+            </div>
         </div>
     </section>
 
@@ -150,18 +165,19 @@
         <div class="details-grid">
             <div class="detail-card reveal">
                 <h3>Ceremony</h3>
-                <p>time of the event</p>
-                <p class="detail-sub">put venue name here<br>address goes here</p>
+                <p>4:00pm</p>
+                <p class="detail-sub">Elm House<br>1956 Mount Glorious Rd<br>Mount Glorious QLD 4520</p>
+                <a class="detail-link" href="https://www.google.com/maps/search/?api=1&amp;query=Elm+House+1956+Mount+Glorious+Rd+Mount+Glorious+QLD+4520" target="_blank" rel="noopener">Open in Maps</a>
             </div>
             <div class="detail-card reveal">
                 <h3>Reception</h3>
-                <p>time of the event</p>
-                <p class="detail-sub">put venue name here<br>address goes here</p>
+                <p>Straight after</p>
+                <p class="detail-sub">Same place, no driving.<br>Dinner, speeches, then the dance floor.</p>
             </div>
             <div class="detail-card reveal">
                 <h3>Dress Code</h3>
                 <p>dress code here</p>
-                <p class="detail-sub">any extra notes for guests</p>
+                <p class="detail-sub">It's August up the mountain, so nights get properly cold. Bring a coat you love.</p>
             </div>
         </div>
     </section>
@@ -171,15 +187,27 @@
         <h2 class="faq-title reveal">FAQ</h2>
         <div class="faq-list">
             <div class="faq-item reveal">
-                <h3>question one?</h3>
+                <h3>How do we get there?</h3>
+                <p>Elm House is about 50 minutes' drive from Brisbane, up Mount Glorious Road. The last stretch is narrow and winding, so allow extra time and take it slow after dark.</p>
+            </div>
+            <div class="faq-item reveal">
+                <h3>Can I just get an Uber home?</h3>
+                <p>Please don't count on it. Rideshare up the mountain is unreliable, so sort out a lift or a designated driver before the day.</p>
+            </div>
+            <div class="faq-item reveal">
+                <h3>What will the weather be like?</h3>
+                <p>Cold. August nights on Mount Glorious drop well below Brisbane, and mist often rolls in. Dress warm and bring a jacket.</p>
+            </div>
+            <div class="faq-item reveal">
+                <h3>Where should we stay?</h3>
                 <p>your answer here...</p>
             </div>
             <div class="faq-item reveal">
-                <h3>question two?</h3>
+                <h3>Are kids invited?</h3>
                 <p>your answer here...</p>
             </div>
             <div class="faq-item reveal">
-                <h3>question three?</h3>
+                <h3>What about gifts?</h3>
                 <p>your answer here...</p>
             </div>
         </div>
@@ -189,16 +217,22 @@
     <section class="rsvp" id="rsvp">
         <div class="rsvp-content reveal">
             <h2>RSVP</h2>
-            <p class="rsvp-sub">your rsvp message here</p>
+            <p class="rsvp-sub">Kindly reply by [RSVP date]. Late replies get a camp chair and a sandwich.</p>
             <form class="rsvp-form" id="rsvp-form">
-                <input type="text" placeholder="Full Name" required>
-                <select required>
-                    <option value="" disabled selected>Will you attend?</option>
-                    <option value="yes">Joyfully accepts</option>
-                    <option value="no">Regretfully declines</option>
-                </select>
-                <input type="text" placeholder="Dietary requirements (optional)">
-                <input type="text" placeholder="Song request (optional)">
+                <input type="text" name="name" placeholder="Full Name" required>
+                <fieldset class="rsvp-choice">
+                    <legend>Will you be there?</legend>
+                    <div class="choice-row">
+                        <button type="button" class="choice choice-yes" id="choice-yes">Wouldn't miss it</button>
+                        <button type="button" class="choice choice-no" id="choice-no">Sadly, can't make it</button>
+                    </div>
+                    <p class="choice-quip" id="choice-quip" aria-live="polite"></p>
+                    <button type="button" class="choice-escape" id="choice-escape" hidden>okay, okay, I genuinely can't come</button>
+                </fieldset>
+                <div class="rsvp-extras" id="rsvp-extras" hidden>
+                    <input type="text" name="dietary" placeholder="Dietary requirements (optional)">
+                    <input type="text" name="song" placeholder="Song that gets you dancing (optional)">
+                </div>
                 <button type="submit" class="btn-rsvp magnetic">Send RSVP</button>
             </form>
         </div>
@@ -206,7 +240,7 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <p>Annie &amp; Connor &mdash; May 1, 2027</p>
+        <p>Annie &amp; Connor &mdash; August 7, 2027 &mdash; Mount Glorious</p>
     </footer>
 
     <!-- Libraries (CDN) -->
